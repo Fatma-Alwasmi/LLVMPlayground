@@ -158,12 +158,17 @@ void DivZeroAnalysis::transfer(Instruction *I, const Memory *In, Memory *NOut) {
         }
         (*NOut)[inst] = isTrue ? &NZ: &Z;
       }
+    }
 
   //------------------[BRANCH INSTRUCTION]------------------------//
   } else if (BranchInst *BI = dyn_cast<BranchInst>(I)){
-    
-  }
+    //do nothing 
 
+  //------------------[isInput()]------------------------//
+  } else if(CallInst *CI = dyn_cast<CallInst>(I)){
+    if(isInput(CI))
+      (*NOut)[inst] = &MZ;
+  }
 }
 
 void DivZeroAnalysis::flowOut(Instruction *I, Memory *Pre, Memory *Post,  SetVector <Instruction *> &WorkSet) {

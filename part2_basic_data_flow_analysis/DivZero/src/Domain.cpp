@@ -5,11 +5,6 @@
 //===----------------------------------------------------------------------===//
 
 /* Add your code here */
-//objects of type Domain that wraps the enum values to return pointers instead of creating new objects everytime
-// static Domain Z(Domain::Zero); // a Domain with Value = Zero
-// static Domain NZ(Domain::NonZero); // a Domain with Value = NonZero
-// static Domain MZ(Domain::MaybeZero); // a Domain with Value = MaybeZero
-// static Domain U(Domain::Uninit); // a Domain with Value = Uninit
 
 
 Domain* Domain::add(Domain* E1, Domain* E2){
