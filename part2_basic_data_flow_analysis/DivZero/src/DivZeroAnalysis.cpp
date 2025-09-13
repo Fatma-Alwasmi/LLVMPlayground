@@ -191,12 +191,42 @@ void DivZeroAnalysis::doAnalysis(Function &F) {
   */ 
 
 }
-
+/* the goal of this funciton is to check for a possible div by zero, to do so i first check if the given funciton is a binary operator
+  if so, i get the abstrct state before the instruction by storing the InMap[I] in In. i then get the denomitator. i check if the 
+    denominator is a constant, if so i just check if its zero, by calling isZero() and returning the return value of that fucntion, 
+    (it returns a bool). if the denominator is not a constant, i look up its abstarct value in In and check for a possible div by 
+    zero i.e if the absval is Z. example of what InMap looks like:
+    InMap:
+    Instruction* "%x = call i32 @getchar()" → Memory* { "%x" → MZ }
+    Instruction* "%y = add i32 %x, 1"      → Memory* { "%x" → MZ }
+    Instruction* "%z = sdiv i32 %y, %x"    → Memory* { "%x" → MZ, "%y" → MZ }
+*/
 bool DivZeroAnalysis::check(Instruction *I) {
-  /* Add your code here */
-  return false;
-}
+  if (BinaryOperator *BO = dyn_cast<BinaryOperator>(I)){
+    if(BO->getOpcode() == Instruction::SDiv || BO->getOpcode() == Instruction::UDiv){
+      Memory *In = InMap[I]; //get the abstract state just before running the instruction
+      if(!In) return false;
+      Value *denominator = BO->getOperand(1);
 
+      if(ConstantInt *CI = dyn_cast<ConstantInt>(denominator))
+        return CI->isZero(); // if constant, check if its zero 
+      
+      // non constant, we look up in the In memory 
+      std::string div_var = variable(denominator);
+      Domain *abstVal = &MZ; // fallback
+      auto it = In->find(div_var); // look for the variable in the In memory
+      if(it != In->end()) // if iterator found the value
+        abstVal = it->second; // get the abstract value
+
+      if(abstVal->Value == Domain::Zero || abstVal->Value == Domain::MaybeZero || abstVal->Value == Domain::Uninit)
+        return true; // potential divide by zero
+      
+      return false; // definitely not a divide by zero
+    }
+    return false; // not a div instruction
+  }
+  return false; // not a binary operator
+}
 char DivZeroAnalysis::ID = 1;
 static RegisterPass<DivZeroAnalysis> X("DivZero", "Divide-by-zero Analysis",
                                        false, false);
