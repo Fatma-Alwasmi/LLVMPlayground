@@ -37,6 +37,22 @@ bool equal(Memory *M1, Memory *M2) {
 
 void DivZeroAnalysis::flowIn(Instruction *I, Memory *In) {
   /* Add your code here */
+  //flow in is the union of all the predecessors' out memories
+  Memory *InUnion = new Memory(); // start with an empty memory InUnion = < >
+  std::vector<Instruction *> preds = getPredecessors(I); // get predecessors of I
+
+  // get all the predecessors' of I in the block
+  for(Instruction *P : preds){
+    //OutMap[P] = current instruction P -> Memory* { "variable" → abstract value }
+    //*POut = Memory* { "variable" → abstract value }
+    Memory *POut = OutMap[P]; // get the out memory of the predecessor.
+    if(!POut) continue; // if null, skip
+    Memory *NewIn = join(InUnion, POut); // join the current InUnion with the predecessor's out memory
+    delete InUnion; // free the memory
+    InUnion = NewIn; // update InUnion to the new joined memory
+  }
+  *In = *InUnion; // assign the result to In
+  delete InUnion; // free the memory
 }
 
 void DivZeroAnalysis::transfer(Instruction *I, const Memory *In, Memory *NOut) {
@@ -157,8 +173,12 @@ void DivZeroAnalysis::transfer(Instruction *I, const Memory *In, Memory *NOut) {
         default: break;
         }
         (*NOut)[inst] = isTrue ? &NZ: &Z;
-      }
-    }
+      }else
+        (*NOut)[inst] = &MZ; // a is constant, b is not constant
+    } else if(ConstantInt *CB = dyn_cast<ConstantInt>(b)){
+      (*NOut)[inst] = &MZ; // b is constant, a is not constant
+    } else
+      (*NOut)[inst] = &MZ; // both are not constants, we cannot determine the abstract value of the return value
 
   //------------------[BRANCH INSTRUCTION]------------------------//
   } else if (BranchInst *BI = dyn_cast<BranchInst>(I)){
@@ -221,7 +241,7 @@ bool DivZeroAnalysis::check(Instruction *I) {
       if(abstVal->Value == Domain::Zero || abstVal->Value == Domain::MaybeZero || abstVal->Value == Domain::Uninit)
         return true; // potential divide by zero
       
-      return false; // definitely not a divide by zero
+      return false; // not a divide by zero
     }
     return false; // not a div instruction
   }
