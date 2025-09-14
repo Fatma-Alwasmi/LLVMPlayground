@@ -53,8 +53,19 @@ Memory* join(Memory *M1, Memory *M2) {
 }
 
 bool equal(Memory *M1, Memory *M2) {
-  /* Add your code here */
   /* Return true if the two memories M1 and M2 are equal */
+  if(M1->size() != M2->size()) return false; // if sizes are different, they are not equal
+  for(auto &pair : *M1){
+    std::string var1 = pair.first;
+    Domain *abstVal_1 = pair.second;
+
+    auto it = M2->find(var1); // look for var1 in M2
+    if(it == M2->end()) return false; //if not found return false
+    Domain *abstVal_2 = it->second;
+
+    if(abstVal_1->Value != abstVal_2->Value) return false; // if abstract values are different, return false
+  }
+  return true; // if all variables and their abstract values are the same, return true
 }
 
 
@@ -244,7 +255,19 @@ void DivZeroAnalysis::doAnalysis(Function &F) {
        Based on the previous Out memory and the current Out memory, check if there is a difference between the two and
          flow the memory set appropriately to all successors of I and update WorkSet accordingly
   */ 
+  //chaotic iteration algorithm
+  while(!WorkSet.empty()){
+    Instruction *I = *WorkSet.begin();
+    WorkSet.remove(I);
 
+    Memory *In = InMap[I];
+    Memory *OldOut = OutMap[I];
+    Memory *NewOut = new Memory();
+
+    flowIn(I, In);
+    transfer(I, In, NewOut);
+    flowOut(I, OldOut, NewOut, WorkSet);
+  }
 }
 /* the goal of this funciton is to check for a possible div by zero, to do so i first check if the given funciton is a binary operator
   if so, i get the abstrct state before the instruction by storing the InMap[I] in In. i then get the denomitator. i check if the 
