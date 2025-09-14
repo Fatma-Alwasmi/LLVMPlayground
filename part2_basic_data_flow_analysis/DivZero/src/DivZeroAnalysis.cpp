@@ -8,11 +8,11 @@ namespace dataflow {
 
 /**
  * Implement your data-flow analysis.
- * 1. Define "flowIn" that joins the memory set of all incoming flows
- * 2. Define "transfer" that computes the semantics of each instruction.
- * 3. Define "flowOut" that flows the memory set to all outgoing flows
+ * 1. Define "flowIn" that joins the memory set of all incoming flows [completed]
+ * 2. Define "transfer" that computes the semantics of each instruction. [completed]
+ * 3. Define "flowOut" that flows the memory set to all outgoing flows 
  * 4. Define "doAnalysis" that stores your results in "InMap" and "OutMap".
- * 5. Define "check" that checks if a given instruction is erroneous or not.
+ * 5. Define "check" that checks if a given instruction is erroneous or not. [completed]
  */
 static Domain MZ(Domain::MaybeZero);  // Maybe Zero
 static Domain Z(Domain::Zero);        // Zero
@@ -20,12 +20,35 @@ static Domain NZ(Domain::NonZero);    // Non Zero
 static Domain U(Domain::Uninit);      // Uninitialized
 
 // define the following functions if needed (not compulsory to do so)
+/* example:
+  M1 = {"%x" → NonZero, "%y" → Zero}
+  M2 = {"%x" → Zero, "%z" → MaybeZero}
+  Result = {"%x" → MaybeZero, "%y" → Zero, "%z" → MaybeZero}*/
 Memory* join(Memory *M1, Memory *M2) {
   Memory* Result = new Memory();
-  /* Add your code here */
-
   /* Result will be the union of memories M1 and M2 */
 
+  // first: add all variables from M1
+  for(auto &pair : *M1){
+    std::string var = pair.first; //get variable
+    Domain *abstVal = pair.second; //get abst val of var
+
+    //check if the var is in M2
+    auto it = M2->find(var);
+    if(it != M2->end()){ //if found
+      (*Result)[var] = Domain::join(abstVal, it->second); //join the two abstract values
+    } else{
+      // var is only in M1, then just copy it
+      (*Result)[var] = abstVal;
+    }
+  }
+  // second, add varialbe that are only in M2
+  for (auto &pair : *M2){
+    std::string var = pair.first;
+    if(Result->find(var) == Result->end()){ // if var not already in Result
+      (*Result)[var] = pair.second; // just copy it
+    }
+  }
   return Result;
 }
 
@@ -192,7 +215,19 @@ void DivZeroAnalysis::transfer(Instruction *I, const Memory *In, Memory *NOut) {
 }
 
 void DivZeroAnalysis::flowOut(Instruction *I, Memory *Pre, Memory *Post,  SetVector <Instruction *> &WorkSet) {
-  /* Add your code here */
+  // first check if the memory state has changed after the transfer function
+  if(!equal(Pre,Post)){
+    // if changed, we need to reanalyze all the successors of I
+    OutMap[I] = Post; // update the OutMap with the new state
+
+    std::vector<Instruction *> succs = getSuccessors(I);
+    for(Instruction *S : succs){
+      WorkSet.insert(S); // add the successor to the workset
+    }
+    }else{
+      // if not changed, just update OutMap
+      OutMap[I] = Post;
+    }
 }
 
 void DivZeroAnalysis::doAnalysis(Function &F) { 
