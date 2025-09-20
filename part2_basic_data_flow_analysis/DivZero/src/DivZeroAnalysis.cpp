@@ -8,11 +8,11 @@ namespace dataflow {
 
 /**
  * Implement your data-flow analysis.
- * 1. Define "flowIn" that joins the memory set of all incoming flows [completed]
- * 2. Define "transfer" that computes the semantics of each instruction. [completed]
+ * 1. Define "flowIn" that joins the memory set of all incoming flows 
+ * 2. Define "transfer" that computes the semantics of each instruction. 
  * 3. Define "flowOut" that flows the memory set to all outgoing flows 
  * 4. Define "doAnalysis" that stores your results in "InMap" and "OutMap".
- * 5. Define "check" that checks if a given instruction is erroneous or not. [completed]
+ * 5. Define "check" that checks if a given instruction is erroneous or not. 
  */
 static Domain MZ(Domain::MaybeZero);  // Maybe Zero
 static Domain Z(Domain::Zero);        // Zero

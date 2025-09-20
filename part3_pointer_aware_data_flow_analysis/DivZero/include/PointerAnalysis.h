@@ -3,6 +3,8 @@
 
 #include "llvm/IR/Function.h"
 #include <set>
+#include <map>
+#include <string>
 
 using namespace llvm;
 

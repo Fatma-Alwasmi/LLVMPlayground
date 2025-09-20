@@ -4,8 +4,18 @@
 // Abstract Domain Implementation
 //===----------------------------------------------------------------------===//
 
+namespace dataflow {
+
 /* Add your code here */
 
+// Constructors
+Domain::Domain() : Value(Uninit) {}
+Domain::Domain(Element V) : Value(V) {}
+
+static Domain MZ(Domain::MaybeZero);  // Maybe Zero
+static Domain Z(Domain::Zero);        // Zero
+static Domain NZ(Domain::NonZero);    // Non Zero
+static Domain U(Domain::Uninit);      // Uninitialized
 
 Domain* Domain::add(Domain* E1, Domain* E2){
     if(E1->Value == MaybeZero || E2->Value == MaybeZero || E1->Value == Uninit || E2->Value == Uninit)
@@ -72,3 +82,5 @@ Domain* Domain::join(Domain* E1, Domain* E2){
         return &MZ;
     return &MZ;
 }
+
+} // namespace dataflow
