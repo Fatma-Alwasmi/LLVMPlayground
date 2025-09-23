@@ -223,7 +223,7 @@ void DivZeroAnalysis::transfer(Instruction *I, const Memory *In, Memory *NOut,
 
   //------------------[isInput()]------------------------//
   } else if(CallInst *CI = dyn_cast<CallInst>(I)){
-    if(isInput(CI))
+    if(isInput(CI) || CI->getType()->isIntegerTy())
       (*NOut)[inst] = &MZ;
 
   //------------------[STORE INSTRUCTION]------------------------//
@@ -395,8 +395,30 @@ void DivZeroAnalysis::doAnalysis(Function &F, PointerAnalysis *PA) {
 }
 
 bool DivZeroAnalysis::check(Instruction *I) {
-  /* Add your code here */
-  return false;
+  if (BinaryOperator *BO = dyn_cast<BinaryOperator>(I)){
+    if(BO->getOpcode() == Instruction::SDiv || BO->getOpcode() == Instruction::UDiv){
+      Memory *In = InMap[I]; //get the abstract state just before running the instruction
+      if(!In) return false;
+      Value *denominator = BO->getOperand(1);
+
+      if(ConstantInt *CI = dyn_cast<ConstantInt>(denominator))
+        return CI->isZero(); // if constant, check if its zero 
+      
+      // non constant, we look up in the In memory 
+      std::string div_var = variable(denominator);
+      Domain *abstVal = &MZ; // fallback
+      auto it = In->find(div_var); // look for the variable in the In memory
+      if(it != In->end()) // if iterator found the value
+        abstVal = it->second; // get the abstract value
+
+      if(abstVal->Value == Domain::Zero || abstVal->Value == Domain::MaybeZero || abstVal->Value == Domain::Uninit)
+        return true; // potential divide by zero
+      
+      return false; // not a divide by zero
+    }
+    return false; // not a div instruction
+  }
+  return false; // not a binary operator
 }
 
 char DivZeroAnalysis::ID = 1;
