@@ -13,8 +13,8 @@ namespace dataflow {
 // Pointer Analysis
 //===----------------------------------------------------------------------===//
 
-using PointsToSet = std::set<std::string>;
-using PointsToInfo = std::map<std::string, PointsToSet>;
+using PointsToSet = std::set<std::string>; // a set of memory locations (variables)
+using PointsToInfo = std::map<std::string, PointsToSet>; // map a pointer variable to a set of memory locations
 class PointerAnalysis {
 public:
   PointerAnalysis(Function &F);
