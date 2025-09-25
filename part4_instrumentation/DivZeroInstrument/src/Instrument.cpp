@@ -22,7 +22,22 @@ void instrumentCoverage(Module *M, Function &F, Instruction &I) {
 }
 
 bool Instrument::runOnFunction(Function &F) {
-  /* Add you code here */
+  Module *M = F.getParent();
+  // iterate over the basic blocks in function F
+  for (Function::iterator BB = F.begin(), E = F.end(); BB != E; ++BB) {
+    // iterate over the instructions in basic block BB
+    for (BasicBlock::iterator I = BB->begin(), E = BB->end(); I != E; ++I) {
+      //if instruction has debug info create CallInst to __coverage__
+      if(I->getDebugLoc())
+        instrumentCoverage(M, F, *I);
+      if(BinaryOperator *BO = dyn_cast<BinaryOperator>(I)){
+        if(BO->getOpcode() == Instruction::SDiv || BO->getOpcode() == Instruction::UDiv){
+          //create CallInst to __sanitize__
+          instrumentSanitize(M, F, *I);
+        }
+      }
+    }
+  }
   return true;
 }
 
