@@ -11,7 +11,30 @@ static const char *CoverageFunctionName = "__coverage__";
  * Implement divide-by-zero sanitizer.
  */
 void instrumentSanitize(Module *M, Function &F, Instruction &I) {
-  /* Add you code here */
+  Value *divisor = I.getOperand(1);
+  int line = I.getDebugLoc().getLine();
+  int col = I.getDebugLoc().getCol();
+
+  // declare __sanatize__ in the module (its like funciton prototype in C)
+  // since we will be calling __sanatize__ in that module, i need to declare 
+  // the types that the funciton expected in the context of that module,
+  // that why i do Type::getVoidTy(M->getContext())
+  FunctionCallee sanitizerFuncDecl = M->getOrInsertFunction(
+      SanitizerFunctionName,
+      Type::getVoidTy(M->getContext()),
+      Type::getInt32Ty(M->getContext()),
+      Type::getInt32Ty(M->getContext()),
+      Type::getInt32Ty(M->getContext())
+  );
+
+  //create constants for the line and col
+  Value *lineVal = ConstantInt::get(Type::getInt32Ty(M->getContext()), line);
+  Value *colVal = ConstantInt::get(Type::getInt32Ty(M->getContext()), col);
+  //create call to __sanatize__
+  //this will a call instruction in the module before instruction I passing
+  //lineVal, colVal and divisor as arguments
+  CallInst::Create(sanitizerFuncDecl, {divisor, lineVal, colVal}, "", &I);
+
 }
 
 /*
