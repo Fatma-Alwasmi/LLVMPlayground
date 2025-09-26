@@ -41,7 +41,28 @@ void instrumentSanitize(Module *M, Function &F, Instruction &I) {
  * Implement code coverage instrumentation.
  */
 void instrumentCoverage(Module *M, Function &F, Instruction &I) {
-  /* Add you code here */
+  int line = I.getDebugLoc().getLine();
+  int col = I.getDebugLoc().getCol();
+
+  // declare __coverage__ in the module (its like funciton prototype in C)
+  // since we will be calling __coverage__ in that module, i need to declare 
+  // the types that the funciton expected in the context of that module,
+  // that why i do Type::getVoidTy(M->getContext())
+  FunctionCallee coverageFuncDecl = M->getOrInsertFunction(
+      CoverageFunctionName,
+      Type::getVoidTy(M->getContext()),
+      Type::getInt32Ty(M->getContext()),
+      Type::getInt32Ty(M->getContext())
+  );
+
+  //create constants for the line and col
+  Value *lineVal = ConstantInt::get(Type::getInt32Ty(M->getContext()), line);
+  Value *colVal = ConstantInt::get(Type::getInt32Ty(M->getContext()), col);
+  //create call to __coverage__
+  //this will a call instruction in the module before instruction I passing
+  //lineVal and colVal as arguments
+  CallInst::Create(coverageFuncDecl, {lineVal, colVal}, "", &I);
+
 }
 
 bool Instrument::runOnFunction(Function &F) {
